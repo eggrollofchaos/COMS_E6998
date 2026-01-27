@@ -1,0 +1,14 @@
+.DS_Store
+
+Personal/
+
+*.bak
+*.debug
+*.log
+*.lock
+*.mp4
+*.txt
+*.zip
+*.lock
+
+# from Ed

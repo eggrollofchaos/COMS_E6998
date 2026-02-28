@@ -1,0 +1,82 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath} % Required for math
+
+\title{HPML Project Proposal \\ Cost-Optimal LLM Fine-Tuning on Heterogeneous and Preemptible GPU Infrastructure}
+\author{Aaron Fan, Akshat Bhandari, Tanisha Rathod, Wei Alexander Xin}
+% \date{February 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Motivation}
+\par The majority of research on LLM fine-tuning is evaluated on clean, homogeneous clusters of dedicated GPUs. However, that is not how most people actually train models; individual users and engineering teams seek cost-efficient solutions. Cloud providers like RunPod, Lambda Labs, and university clusters expose a mix of GPU generations at different price points, with spot instances that can be preempted mid-run. Practitioners are left guessing: is it cheaper to run on two A5000s for longer, or one A100 for less time? What happens to a training run when a spot instance gets killed?
+\par There is limited systematic evidence in the literature on this trade-off. This project aims to answer these questions by reporting both cost-to-target-quality and time-to-target-quality across hardware configurations. We propose a systems study of LLM fine-tuning in real-world cloud environments: mixed GPU types and spot preemption.
+
+\section{Core Research Question}
+\par For a given target model and quality threshold, \textbf{what hardware configuration minimizes cost-to-target-quality under realistic cloud-compute conditions, including heterogeneous hardware and spot preemption?}
+
+\section{Approach}
+\par We will fine-tune a small but non-trivial model (Llama-3.1-8B or Mistral-7B) on a concrete downstream task with a measurable quality metric (perplexity or benchmark accuracy). We will use LoRA/QLoRA to keep training tractable across GPU tiers.
+We will run experiments across several GPU configurations, varying:
+\begin{itemize}
+    \item GPU type (e.g., A4000, A5000, A100)
+    \item Number of GPUs
+    \item Batch size and LoRA rank
+\end{itemize}
+For each configuration, we will track:
+\begin{itemize}
+    \item Wall-clock time to hit the quality target
+    \item Total compute cost (GPU-hours $\times$ hourly price)
+    \item GPU utilization and memory bandwidth (via PyTorch Profiler / NVIDIA Nsight)
+    \item Training throughput ($\frac{tokens}{s}$)
+\end{itemize}
+Additionally, we will simulate spot preemption by checkpointing and resuming runs at different stages of training, measuring the overhead and cost impact. The primary output is a cost-quality Pareto frontier across configurations, which provides ML practitioners actionable guidelines.
+
+\section{Optimization Techniques}
+\begin{itemize}
+    \item Mixed precision training (bf16/fp16)
+    \item Gradient checkpointing to manage memory across GPU tiers
+    \item LoRA rank tuning as a quality-cost control knob
+\end{itemize}
+
+\section{Profiling and Metrics}
+\par We will profile the full ML pipeline using PyTorch Profiler, NVIDIA Nsight Systems, and WandB logging.
+\subsection*{Phase-Level Profiling}
+\begin{itemize}
+    \item Data preprocessing time per epoch
+    \item Data loading throughput (samples/s), loader wait time, and host-to-device transfer time
+    \item Training step breakdown: forward, backward, optimizer step, and communication/synchronization overhead
+    \item Evaluation/inference latency and throughput on a fixed validation set
+\end{itemize}
+
+\subsection*{Primary Metrics}
+\begin{itemize}
+    \item \textbf{Cost-to-target-quality (primary)}: total GPU cost to reach a fixed quality threshold
+    \item \textbf{Time-to-target-quality}: wall-clock time to reach the same threshold
+    \item Training throughput (tokens/s) and scaling efficiency across GPU configurations
+    \item Peak memory usage, memory bandwidth utilization, and GPU utilization
+    \item Preemption overhead: lost work (steps), resume latency, and extra cost from interruption/recovery
+\end{itemize}
+
+\subsection*{Cost Model}
+\[
+\text{Total Cost} = \sum_i (\text{GPU-hours}_i \times \text{hourly price}_i) + \text{preemption recovery overhead}
+\]
+\par We will report Pareto frontiers for cost vs. quality and time vs. quality, with confidence intervals over repeated runs.
+
+
+\section{Deliverables}
+\begin{itemize}
+    \item Reproducible codebase with training/evaluation scripts and run configurations
+    \item WandB dashboard showing all runs, hyperparameters, and profiler results
+    \item Visualizations of cost-quality and time-quality Pareto frontiers
+    \item Recommended configurations by budget/reliability constraints
+    \item Final report and presentation covering methodology, results, and analysis
+\end{itemize}
+
+\section{Potential Impact}
+\par A systematic cost-to-target-quality characterization of fine-tuning on heterogeneous spot infrastructure is directly useful to anyone training models on a budget, which is most practitioners. It is also the kind of result that cloud providers can act on directly, either to guide customers on configuration choices or to inform their own scheduling and pricing strategies. Framing the study around cost-to-target-quality, rather than raw throughput alone, makes the analysis better aligned with real deployment decisions.
+
+\end{document}

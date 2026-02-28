@@ -1,0 +1,112 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.72in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath} % Required for math
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\setlist[itemize]{leftmargin=*, itemsep=1pt, topsep=2pt, parsep=0pt, partopsep=0pt}
+\titlespacing*{\section}{0pt}{5pt plus 1pt minus 1pt}{3pt}
+\titlespacing*{\subsection}{0pt}{4pt plus 1pt minus 1pt}{2pt}
+
+\title{HPML Project Proposal \\ Cost-Optimal LLM Fine-Tuning on Heterogeneous and Preemptible GPU Infrastructure}
+\author{Aaron Fan (af3623), Akshat Bhandari (ab6174), Tanisha Rathod (tr2828), Wei Alexander Xin (wax1)}
+% \date{}
+
+\begin{document}
+
+\maketitle
+\vspace{-8pt}
+
+\section{Goal/Objective}
+The majority of research on LLM fine-tuning is evaluated on clean, homogeneous clusters of dedicated GPUs. However, individual users and engineering teams typically operate under mixed hardware tiers and potential preemption, where cost-efficient decisions are unclear. Cloud providers like RunPod, Lambda Labs, and university clusters expose a mix of GPU generations at different price points, with spot instances that can be preempted mid-run. Our objective is to answer: for a fixed model and quality target, which hardware configuration minimizes cost-to-target-quality under heterogeneous and preemptible cloud conditions?
+
+We define a fixed primary target-quality metric as validation perplexity on a held-out split. The threshold is set from a pilot run and frozen across all experiments. We report two primary outcomes: cost-to-target-quality and time-to-target-quality, where both are measured at first threshold crossing.
+
+This project also aligns with the course goals of (1) applying high-performance ML techniques on a real benchmark and dataset, (2) using profiling tools to identify and optimize bottlenecks in training and inference, (3) comparing runtime behavior across accelerator-enabled environments, and (4) delivering a systematic performance analysis study.
+
+To ensure actionability, we treat cost-to-target-quality as the primary optimization objective and time-to-target-quality as a supporting systems metric. This framing allows us to separate pure throughput wins from true training-economics improvements under realistic reliability constraints.
+
+\section{Challenges}
+\begin{itemize}
+  \item Ensuring fair hardware comparisons across GPU types and counts without confounding optimization dynamics.
+  \item Quantifying interruption overhead cleanly via lost work, checkpoint/restore time, and added cost.
+  \item Producing reproducible, statistically stable comparisons with fixed training budgets and repeated runs.
+  \item Attributing bottlenecks across the full ML lifecycle (data preprocessing, data loading, training, and evaluation/inference), rather than only end-to-end runtime.
+\end{itemize}
+
+\section{Approach and Performance Optimization Techniques}
+We will fine-tune Mistral-7B for instruction tuning and evaluate performance under heterogeneous GPU configurations (e.g., A4000, A5000, A100 tiers), varying GPU count, batch configuration, and adapter method. The main comparison axis is LoRA vs QLoRA under the same target-quality threshold to identify when QLoRA becomes cost-optimal on smaller/cheaper hardware.
+
+Each run follows the same end-to-end pipeline: preprocessing, data loading, training, and evaluation. We will profile every phase to identify where hardware- and method-specific bottlenecks emerge, then map those bottlenecks to optimization choices.
+
+To keep comparisons fair, we will hold fixed across runs:
+\begin{itemize}
+  \item Total training tokens (fixed token budget per run)
+  \item Optimizer and hyperparameters
+  \item Data order and random seed
+  \item Evaluation cadence
+  \item Effective batch size / tokens per update (via gradient accumulation)
+  \item LR schedule tied to tokens processed
+  \item Adapter configuration (LoRA/QLoRA rank and target modules)
+\end{itemize}
+
+Performance optimization techniques:
+\begin{itemize}
+  \item Mixed precision training (bf16/fp16)
+  \item Gradient checkpointing to manage memory across GPU tiers
+  \item LoRA vs QLoRA comparison as the principal memory/computation trade-off
+\end{itemize}
+
+For preemption, we will use controlled interruption/restart experiments only. For each hardware configuration, we will compare interrupted vs uninterrupted runs and report:
+\begin{itemize}
+  \item Expected lost work per interruption (time since last checkpoint)
+  \item Checkpoint write time and restore time
+  \item Delta in cost-to-target-quality with and without interruptions
+\end{itemize}
+
+Methodologically, we will report before/after optimization comparisons and analyze trade-offs in compute efficiency, memory behavior, and throughput. This follows the course emphasis on applying 1--3 optimization techniques and rigorously validating gains with profiler evidence.
+
+\section{Implementation Details}
+\textbf{Hardware:} Accelerator-enabled cloud GPU infrastructure with heterogeneous tiers and preemptible/spot-equivalent conditions modeled via controlled interruptions. Candidate tiers include A4000, A5000, and A100 class GPUs depending on availability (or nearest available equivalents on our selected platform).
+
+\textbf{Software:} PyTorch, Hugging Face Transformers, PEFT (LoRA/QLoRA), Weights \& Biases (WandB), PyTorch Profiler, and NVIDIA Nsight Systems. We will reuse open-source Hugging Face/PEFT training pipelines and profiling hooks as the baseline code path for reproducibility.
+
+\textbf{Dataset and model:} Mistral-7B fine-tuned on Dolly-15k (instruction tuning) with a fixed train/validation split and deterministic preprocessing.
+
+\textbf{Training budget and cadence:} 300M training tokens per experiment, fixed evaluation intervals, and repeated trials for confidence intervals.
+
+\textbf{Profiling and metrics:} We will profile data preprocessing, data loading, training-step breakdown (forward/backward/optimizer/communication), and evaluation throughput/latency. Primary metrics are cost-to-target-quality and time-to-target-quality. Additional metrics include throughput (tokens/s), scaling efficiency, GPU utilization, memory bandwidth, peak memory, interruption overhead, and \$ per 1M training tokens.
+
+\textbf{Analysis plan:} We will report paired comparisons (same configuration, with vs without interruptions) and cross-hardware comparisons under fixed controls. Results will include confidence intervals across repeated runs and ablations that isolate the effect of adapter method (LoRA vs QLoRA) from hardware tier and interruption condition
+
+\[
+\text{Total Cost} = \sum_i (\text{GPU-hours}_i \times \text{hourly price}_i) + \text{interruption recovery overhead}
+\]
+
+We will report cost--quality and time--quality Pareto frontiers across configurations, with confidence intervals over repeated runs.
+\section{Demo Planned}
+\begin{itemize}
+  \item Live WandB dashboard walkthrough with configuration-level metrics and profiler traces.
+  \item Cost--quality and time--quality Pareto frontiers across GPU tiers and adapter methods.
+  \item Interruption overhead breakdown: lost work, checkpoint/restore time, and cost delta.
+  \item LoRA vs QLoRA comparison showing where QLoRA becomes cost-optimal.
+  \item End-to-end phase breakdown (data preprocessing, loading, training, and evaluation/inference) showing where optimizations provide measurable gains.
+  \item Reproducibility walkthrough: run configuration table, fixed controls, and instructions to recreate key figures.
+\end{itemize}
+
+\section{References}
+\begin{itemize}
+  \item Hu et al., ``LoRA: Low-Rank Adaptation of Large Language Models,'' ICLR 2022.
+  \item Dettmers et al., ``QLoRA: Efficient Finetuning of Quantized LLMs,'' NeurIPS 2023.
+  \item vLLM Project, ``vLLM: Easy, Fast, and Cheap LLM Serving with PagedAttention,'' SOSP 2023.
+  \item PyTorch Team, ``Performance Tuning Guide,'' \url{https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html}.
+  \item PyTorch Team, ``PyTorch Profiler Documentation,'' \url{https://pytorch.org/}.
+  \item Weights \& Biases Documentation, \url{https://wandb.ai/site}.
+  \item NVIDIA, ``Nsight Systems Documentation,'' \url{https://developer.nvidia.com/nsight-systems}.
+\end{itemize}
+
+\end{document}

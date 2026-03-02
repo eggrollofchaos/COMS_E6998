@@ -1,4 +1,7 @@
 .DS_Store
+
+# Python
+__pycache__/
 .ipynb_checkpoints/
 
 private/

@@ -11,4 +11,6 @@ Personal/
 *.zip
 *.lock
 
+*.sublime*
+
 # from Ed

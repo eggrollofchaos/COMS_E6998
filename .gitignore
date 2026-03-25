@@ -17,4 +17,6 @@ private/
 
 *.sublime*
 
-# from Ed
+CLAUDE.md
+.agent-sessions/
+git-status.sh

@@ -1,0 +1,28 @@
+% Force figures to appear where they are in the source (no floating)
+\usepackage{float}
+\floatplacement{figure}{H}
+
+% Prevent orphans and widows (single lines stranded on a page)
+\widowpenalty=10000
+\clubpenalty=10000
+
+% Margins
+\usepackage{geometry}
+\geometry{margin=1in}
+
+% More space between paragraphs and lines
+\setlength{\parskip}{0.8em}
+\linespread{1.25}
+
+% Adjust list spacing without extra package dependencies.
+\makeatletter
+\def\@listi{\leftmargin\leftmargini \topsep 0.5em \parsep 0.3em \itemsep 0.5em}
+\let\@listI\@listi
+\@listi
+\makeatother
+
+% Scale images to 75% width
+\usepackage{graphicx}
+\let\oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[2][]{\oldincludegraphics[width=0.75\textwidth,#1]{#2}}
+\newcommand{\partyemoji}{\raisebox{-0.2em}{\oldincludegraphics[height=1em]{party-popper.png}}}

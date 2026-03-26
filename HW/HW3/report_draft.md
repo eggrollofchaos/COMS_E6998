@@ -180,7 +180,7 @@ All C1-C3 checksums match, confirming correctness. C4 correctness verified via `
 
 *C4 uses float32 (skeleton uses `torch.rand`) and cross-correlation (matching `F.conv2d`), so the checksum differs from C1-C3's double-precision convolution.
 
-### C4: Triton (\texorpdfstring{\partyemoji}{} *Bonus, 10 pts* \texorpdfstring{\partyemoji}{})
+### C4: Triton ~*Bonus, 10 pts*~
 
 - **GPU:** NVIDIA RTX A6000 (same as C1-C3)
 - **Precision:** float32 (per skeleton, uses `torch.rand`)
